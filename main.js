@@ -90,7 +90,7 @@ exports.end_block = function () {
 exports.begin_block = exports.begin_define_block;
 
 exports.inherit = function (name, args) {
-    getCurrentFile().inherit.push({name:name, args:args});
+  getCurrentFile().inherit.push({name:name, args:args});
 }
 
 exports.require = function (name, args, mod) {
@@ -116,14 +116,27 @@ exports.require = function (name, args, mod) {
     }
   )
 
-  args.e = exports;
-  args.require = require;
   var template = '<% e._init(__output); %>' + fs.readFileSync(ejspath).toString() + '<% e._exit(); %>';
   
-  exports.info.args.push(args);
+  /* Inherit args from parent file */
+  var merged_args = {};
+  merged_args.e = exports;
+  merged_args.require = require;
+  if (exports.info.args.length > 0) {
+    var last_args = exports.info.args[exports.info.args.length-1];
+    for (var key in last_args) {
+      merged_args[key] = last_args[key];
+    }
+  }
+  for (var key in args) {
+    merged_args[key] = args[key];
+  }
+
+  exports.info.args.push(merged_args);
   exports.info.file_stack.push({path: ejspath, inherit: []});
 
-  var res = ejs.render(template, args);
+  var res = ejs.render(template, merged_args);
+
   exports.info.file_stack.pop();
   exports.info.args.pop();
 
