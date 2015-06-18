@@ -33,6 +33,7 @@ exports.info = {
   __output_stack: [],
   block_stack: [],
   file_stack: [],
+  blocks: {},
   args: []
 };
 
@@ -70,17 +71,29 @@ exports.end_capture = function () {
 }
 
 exports.begin_define_block = function (name) {
+  if (typeof exports.info.blocks[name] == "undefined")
+    exports.info.blocks[name] = {};
   exports.info.block_stack.push(name);
   exports.begin_capture();
 }
 
+exports.super = function () {
+  exports.info.__output.push('<!eejs!super!>');
+}
+
 exports.end_define_block = function () {
   var content = exports.end_capture();
-  return content;
+  var name = exports.info.block_stack.pop();
+  if (typeof exports.info.blocks[name].content == "undefined")
+    exports.info.blocks[name].content = content;
+  else if (typeof exports.info.blocks[name].content.indexOf('<!eejs!super!>'))
+    exports.info.blocks[name].content = exports.info.blocks[name].content.replace('<!eejs!super!>', content);
+
+  return exports.info.blocks[name].content;
 }
 
 exports.end_block = function () {
-  var name = exports.info.block_stack.pop();
+  var name = exports.info.block_stack[exports.info.block_stack.length-1];
   var renderContext = exports.info.args[exports.info.args.length-1];
   var args = {content: exports.end_define_block(), renderContext: renderContext};
   if (blockMangler) blockMangler(name, args);
