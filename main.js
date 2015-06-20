@@ -153,6 +153,10 @@ exports.require = function (name, args, mod) {
   exports.info.file_stack.pop();
   exports.info.args.pop();
 
+  if (exports.info.file_stack.length == 0) {
+    exports.info.blocks = {};
+  }
+
   return res;
 }
 
